@@ -175,7 +175,7 @@ class BehaviorPotentialField:
         data = bpf_array / bpf_max.astype(float) * 100
         data = list(data.astype(int).flat)
 
-        print type(data)
+        # print type(data)
 
         return data
 
@@ -262,16 +262,7 @@ class BehaviorPotentialField:
     def vectorRiskY(self, r, theta, kappa, coefficient, mu):
         Fy = -1.0 * coefficient * (-1 * math.sin(theta)/(2*self.sigma) - kappa*math.cos(theta)*math.sin(theta-mu)/r)
         return Fy
-    
 
-    ## This is not implemented yet.
-    # def Human(self):
-    #     for i in range(self.n):
-    #         for j in range(self.n):
-    #             if i %2 == 0 and j %2 == 0:
-    #                 d_h, theta_h = self.get_polar_coordinate_from_origin(i*self.resolution, j/100) # assumed human
-    #                 self.set_human_position(d_h, theta_h, i*self.resolution, j*self.resolution)
-        
 
 def main():
     bP = BehaviorPotentialField()
