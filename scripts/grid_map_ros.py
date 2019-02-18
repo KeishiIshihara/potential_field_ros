@@ -14,21 +14,20 @@ from waypoints import ComputeWaypoints
 from visualize_potentials import BehaviorPotentialField
 
 class subPose3d:
-    def __init__(self):
+	def __init__(self):
 		""" Meta difinition """
-        self.width = 400 #[cells]
-        self.height = 400 #[cells]
-        self.resolution = 0.01 #[m/cells]
+		self.width = 400 #[cells]
+		self.height = 400 #[cells]
+		self.resolution = 0.01 #[m/cells]
+		self.start_position_x = 299 # int(random.uniform(0, self.width)) # 240
+		self.start_position_y = 200 # int(random.uniform(0, self.width)) # 240
 
-        self.start_position_x = 299 # int(random.uniform(0, self.width)) # 240
-        self.start_position_y = 200 # int(random.uniform(0, self.width)) # 240
-
-        self.dests = []
-        self.dest1_x = 10
-        self.dest1_y = 290
-        # self.dest1_x = int(random.uniform(0, self.width)) 
-        # self.dest1_y = int(random.uniform(0, self.width)) 
-        self.dests.append([self.dest1_x,self.dest1_y])
+		self.dests = []
+		self.dest1_x = 10
+		self.dest1_y = 290
+		# self.dest1_x = int(random.uniform(0, self.width)) 
+		# self.dest1_y = int(random.uniform(0, self.width)) 
+		self.dests.append([self.dest1_x,self.dest1_y])
 
 		""" These are coefficients to calculate the potential """
 		self.kappa = 0.5 #3.0
@@ -46,7 +45,7 @@ class subPose3d:
 		self.pub = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
 
 
-    def callback(self, pose3d):
+	def callback(self, pose3d):
 		rate = rospy.Rate(10) #Number of publishing in 1 seconds
 		#print pose3d
 		self.grid = OccupancyGrid()
@@ -79,44 +78,64 @@ class subPose3d:
 		# self.pub.publish(self.grid)
         # print self.grid.data
 	
-	def reset_goal_position(self, num_of_human):
+	def reset_goal_position_to_the_human(self, x, y):
+        # reset new goal
         self.dests = []
-        self.dests.append([self.humans[num_of_human][0], self.humans[num_of_human][1]])
+        self.dests.append([x, y])
         self.waypoints.dests = self.dests
         last_point = self.waypoints.waypoints[-1]
         self.waypoints.waypoints = []
         self.waypoints.waypoints.append(last_point)
         self.pf.dests = self.dests
 
-        new_humans = []
-        for i in range(len(self.humans)):
-            if i is not (num_of_human):
-                new_humans.append(self.humans[i])
-        
-        ## Update the humans of the waypoints object and also self.humans of this class' object
-        self.waypoints.humans = new_humans
-        self.pf.humans = new_humans
-        self.humans = new_humans
+        # check if goal is human or not
+        np_humans = np.array(self.humans)
+        xy = np.array([x,y])
+        goal_is_human = False
+        for i in range(len(np_humans)):
+            if (np_humans[i] == xy).all() == True:
+                print np_humans[i]
+                goal_is_human = True
+                human_position = i
+
+        # update humans if goal is human
+        if goal_is_human == True:
+            new_humans = []
+            for i in range(len(self.humans)):
+                if i != human_position:
+                    new_humans.append(self.humans[i])
+
+            ## Update the humans of the waypoints object and also self.humans of this class' object
+            self.waypoints.humans = new_humans
+            self.pf.humans = new_humans
+            self.humans = new_humans
 
         # sys.exit(0)
 
-    def show_waypoints(self):
+	def show_waypoints(self):
         self.waypoints.show_waypoints()
         self.pf.show_bpf()
 
         reset_goal = True
 
-        while reset_goal is True and len(self.humans) > 0:
-            print "~~~~~~"
-            print "Do you want to go to someone to talk?"
-            print "(If you don't want to do it, input escape.)"
-            print "There are "+str(len(self.humans))+" humans."
+        while reset_goal is True:
+            print " --------- ------- -------- ------- ------- "
+            print " --------- ------- -------- ------- ------- "
+            print "Do you want to change the Goal ?"
+            print "Range is in ("+str(self.width)+", "+str(self.height)+")"
+
+            for i in range(len(self.humans)):
+                print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
             
-            num_of_human = input("Please input humans' number >> ")
+            # x, y = (int(x) for x in input("input goal position as (x,y) >> ").split())
+            x, y = map(int, raw_input("input goal position as (x,y) >> ").split())
+            print x, y
             
-            if 0 < (num_of_human) < len(self.humans)+1:
-                print "I'm gonna go to the human "+str(num_of_human)
-                self.reset_goal_position( num_of_human-1 )
+            # if 0 < (num_of_human) < len(self.humans)+1:
+            if x < self.width and y < self.height:
+
+                print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
+                self.reset_goal_position(x, y)
                 self.waypoints.show_waypoints()
 
             else:
