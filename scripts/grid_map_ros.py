@@ -12,25 +12,24 @@ from nav_msgs.msg import OccupancyGrid
 
 from waypoints import ComputeWaypoints
 from visualize_potentials import BehaviorPotentialField
+from time import sleep
+
 
 class subPose3d:
 	def __init__(self):
-		""" Meta difinition """
 		self.width = 400 #[cells]
 		self.height = 400 #[cells]
 		self.resolution = 0.01 #[m/cells]
 		self.start_position_x = 299 # int(random.uniform(0, self.width)) # 240
 		self.start_position_y = 200 # int(random.uniform(0, self.width)) # 240
 
+		""" These are coefficients to calculate the potential """
 		self.dests = []
 		self.dest1_x = 10
 		self.dest1_y = 290
-		# self.dest1_x = int(random.uniform(0, self.width)) 
-		# self.dest1_y = int(random.uniform(0, self.width)) 
 		self.dests.append([self.dest1_x,self.dest1_y])
 
-		""" These are coefficients to calculate the potential """
-		self.kappa = 0.5 #3.0
+		self.kappa = 0.5
 		self.alpha = 150.0 #300.0 #20000 #700
 		self.beta = 1.0
 		self.sigma = 1.0 #[m] #defalt is 1.5
@@ -46,7 +45,7 @@ class subPose3d:
 
 
 	def callback(self, pose3d):
-		rate = rospy.Rate(10) #Number of publishing in 1 seconds
+		rate = rospy.Rate(0.1) #Number of publishing in 1 seconds
 		#print pose3d
 		self.grid = OccupancyGrid()
 		self.grid.header.frame_id = "world"
@@ -54,10 +53,10 @@ class subPose3d:
 		self.grid.info.resolution = self.resolution
 		self.grid.info.width = self.width
 		self.grid.info.height = self.height
-		self.grid.info.origin.position.x = -2.5
-		self.grid.info.origin.position.y = -2.5 
+		self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
+		self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
 
-		
+
 		#### Compute humans position and direction here ####
 		self.define_humans()
 		#### now it is predefined.
@@ -71,14 +70,18 @@ class subPose3d:
 		# self.grid.data = bp.show_bpf() ## Whichever you want
 
 		self.show_waypoints()
-		
+
+		rate.sleep()
+		sleep(10)
+
 		# for i in range(50):
 		# 	for j in range(50):
 		# 		self.grid.data.append(i+j)
 		# self.pub.publish(self.grid)
-        # print self.grid.data
+		# print self.grid.data
 	
-	def reset_goal_position_to_the_human(self, x, y):
+
+	def reset_goal_position(self, x, y):
         # reset new goal
         self.dests = []
         self.dests.append([x, y])
@@ -144,46 +147,46 @@ class subPose3d:
         
         print "Done."
     
-    def show_only_potential(self):
-        self.pf.show_bpf()
+	def show_only_potential(self):
+		self.pf.show_bpf()
 
 
 	def define_humans(self):
 		""" About a human """
-        self.humans = []
-        self.human_vels = []
+		self.humans = []
+		self.human_vels = []
 
-        #### This moment, you can choose how to define people.
-        #### Randomly and Manually are available.
-        ## Make human positions and velocitys munually.   
-        ## TODO: these params have to decided randamly.
-        ## human 1
-        self.humans.append([170,200]) ## position
-        self.human_vels.append([0.5,0.5]) ## direction (velocity)
-        ## human 2
-        self.humans.append([180,100])
-        self.human_vels.append([0.5,0.5])
-        self.num_humans = len(self.humans)
-        
-        ## Make human positions and velocitys randomly.
-        ## All you have to do is only to set number of humans.
-        # self.num_humans = 2
-        # for i in range(self.num_humans):
-        #     ## human position
-        #     humans_rand_x = int(random.uniform(0, self.width))
-        #     humans_rand_y = int(random.uniform(0, self.height))
-        #     self.humans.append([humans_rand_x, humans_rand_y])
-        #     ## human velocity
-        #     threshold_of_the_size_of_velocity = False
-        #     count = 0
-        #     while threshold_of_the_size_of_velocity is False:
-        #         vel_rand = np.random.randint(-6, 6, 2).astype(float) / 10.
-        #         r = math.sqrt(vel_rand[0]**2+vel_rand[1]**2)
-        #         if r > 0.5:
-        #             threshold_of_the_size_of_velocity = True
-        #         count += 1
-        #     self.human_vels.append(vel_rand.tolist())
-        #     # print "# how many loops to decide a vel "+str(count)+" of human "+str(i)
+		#### This moment, you can choose how to define people.
+		#### Randomly and Manually are available.
+		## Make human positions and velocitys munually.   
+		## TODO: these params have to decided randamly.
+		## human 1
+		self.humans.append([170,200]) ## position
+		self.human_vels.append([0.5,0.5]) ## direction (velocity)
+		## human 2
+		self.humans.append([180,100])
+		self.human_vels.append([0.5,0.5])
+		self.num_humans = len(self.humans)
+
+		## Make human positions and velocitys randomly.
+		## All you have to do is only to set number of humans.
+		# self.num_humans = 2
+		# for i in range(self.num_humans):
+		#     ## human position
+		#     humans_rand_x = int(random.uniform(0, self.width))
+		#     humans_rand_y = int(random.uniform(0, self.height))
+		#     self.humans.append([humans_rand_x, humans_rand_y])
+		#     ## human velocity
+		#     threshold_of_the_size_of_velocity = False
+		#     count = 0
+		#     while threshold_of_the_size_of_velocity is False:
+		#         vel_rand = np.random.randint(-6, 6, 2).astype(float) / 10.
+		#         r = math.sqrt(vel_rand[0]**2+vel_rand[1]**2)
+		#         if r > 0.5:
+		#             threshold_of_the_size_of_velocity = True
+		#         count += 1
+		#     self.human_vels.append(vel_rand.tolist())
+		#     # print "# how many loops to decide a vel "+str(count)+" of human "+str(i)
 
 
 
