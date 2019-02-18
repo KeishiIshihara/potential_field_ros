@@ -1,4 +1,4 @@
-# ROS package for Artificial Potential Field
+# potential_field_ros
 ROS package for artificial potential field and path planning based on potential field.
 
 
