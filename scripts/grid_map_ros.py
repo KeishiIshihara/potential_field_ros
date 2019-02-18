@@ -82,70 +82,70 @@ class subPose3d:
 	
 
 	def reset_goal_position(self, x, y):
-        # reset new goal
-        self.dests = []
-        self.dests.append([x, y])
-        self.waypoints.dests = self.dests
-        last_point = self.waypoints.waypoints[-1]
-        self.waypoints.waypoints = []
-        self.waypoints.waypoints.append(last_point)
-        self.pf.dests = self.dests
+		# reset new goal
+		self.dests = []
+		self.dests.append([x, y])
+		self.waypoints.dests = self.dests
+		last_point = self.waypoints.waypoints[-1]
+		self.waypoints.waypoints = []
+		self.waypoints.waypoints.append(last_point)
+		self.pf.dests = self.dests
 
-        # check if goal is human or not
-        np_humans = np.array(self.humans)
-        xy = np.array([x,y])
-        goal_is_human = False
-        for i in range(len(np_humans)):
-            if (np_humans[i] == xy).all() == True:
-                print np_humans[i]
-                goal_is_human = True
-                human_position = i
+		# check if goal is human or not
+		np_humans = np.array(self.humans)
+		xy = np.array([x,y])
+		goal_is_human = False
+		for i in range(len(np_humans)):
+			if (np_humans[i] == xy).all() == True:
+				print np_humans[i]
+				goal_is_human = True
+				human_position = i
 
-        # update humans if goal is human
-        if goal_is_human == True:
-            new_humans = []
-            for i in range(len(self.humans)):
-                if i != human_position:
-                    new_humans.append(self.humans[i])
+		# update humans if goal is human
+		if goal_is_human == True:
+			new_humans = []
+			for i in range(len(self.humans)):
+				if i != human_position:
+					new_humans.append(self.humans[i])
 
-            ## Update the humans of the waypoints object and also self.humans of this class' object
-            self.waypoints.humans = new_humans
-            self.pf.humans = new_humans
-            self.humans = new_humans
+			## Update the humans of the waypoints object and also self.humans of this class' object
+			self.waypoints.humans = new_humans
+			self.pf.humans = new_humans
+			self.humans = new_humans
 
-        # sys.exit(0)
-
+		# sys.exit(0)
+		
 	def show_waypoints(self):
-        self.waypoints.show_waypoints()
-        self.pf.show_bpf()
+		self.waypoints.show_waypoints()
+		self.pf.show_bpf()
 
-        reset_goal = True
+		reset_goal = True
 
-        while reset_goal is True:
-            print " --------- ------- -------- ------- ------- "
-            print " --------- ------- -------- ------- ------- "
-            print "Do you want to change the Goal ?"
-            print "Range is in ("+str(self.width)+", "+str(self.height)+")"
+		while reset_goal is True:
+			print " --------- ------- -------- ------- ------- "
+			print " --------- ------- -------- ------- ------- "
+			print "Do you want to change the Goal ?"
+			print "Range is in ("+str(self.width)+", "+str(self.height)+")"
 
-            for i in range(len(self.humans)):
-                print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
-            
-            # x, y = (int(x) for x in input("input goal position as (x,y) >> ").split())
-            x, y = map(int, raw_input("input goal position as (x,y) >> ").split())
-            print x, y
-            
-            # if 0 < (num_of_human) < len(self.humans)+1:
-            if x < self.width and y < self.height:
+			for i in range(len(self.humans)):
+				print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
+			
+			# x, y = (int(x) for x in input("input goal position as (x,y) >> ").split())
+			x, y = map(int, raw_input("input goal position as (x,y) >> ").split())
+			print x, y
+			
+			# if 0 < (num_of_human) < len(self.humans)+1:
+			if x < self.width and y < self.height:
 
-                print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
-                self.reset_goal_position(x, y)
-                self.waypoints.show_waypoints()
+				print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
+				self.reset_goal_position(x, y)
+				self.waypoints.show_waypoints()
 
-            else:
-                reset_goal = False
-                sleep(5)
-        
-        print "Done."
+			else:
+				reset_goal = False
+				sleep(5)
+
+		print "Done."
     
 	def show_only_potential(self):
 		self.pf.show_bpf()
