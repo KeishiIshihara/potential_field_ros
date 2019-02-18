@@ -45,6 +45,7 @@ class subPose3d:
 
 
 	def callback(self, pose3d):
+
 		rate = rospy.Rate(0.1) #Number of publishing in 1 seconds
 		#print pose3d
 		self.grid = OccupancyGrid()
@@ -55,8 +56,7 @@ class subPose3d:
 		self.grid.info.height = self.height
 		self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
 		self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
-
-
+			
 		#### Compute humans position and direction here ####
 		self.define_humans()
 		#### now it is predefined.
@@ -69,8 +69,8 @@ class subPose3d:
 
 		# self.grid.data = bp.show_bpf() ## Whichever you want
 
+		# while not rospy.is_shutdown():
 		self.show_waypoints()
-
 		rate.sleep()
 		sleep(10)
 
@@ -195,7 +195,8 @@ def main(args):
 	hu = subPose3d()
 	rospy.init_node('subPose3d_node', anonymous=True)
 	try:
-		rospy.Subscriber('/openpose_skeleton_3d_node/pose3d', COCO3d_ARR, hu.callback)
+		# rospy.Subscriber('/openpose_skeleton_3d_node/pose3d', COCO3d_ARR, hu.callback)
+		rospy.
 		rospy.spin()
 	except KeyboardInterrupt:
 		print "Shutting down ROS module"
