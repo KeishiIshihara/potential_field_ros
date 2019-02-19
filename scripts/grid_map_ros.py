@@ -189,8 +189,6 @@ class subPose3d:
 		#     # print "# how many loops to decide a vel "+str(count)+" of human "+str(i)
 
 
-
-
 def main(args):
 	hu = subPose3d()
 	rospy.init_node('subPose3d_node', anonymous=True)
@@ -205,8 +203,6 @@ def main(args):
 if __name__=='__main__':
 	main(sys.argv)
 	
-
-
 
 #     def set_body_parts(self, data):
 # 	body_parts = BodyPartElm()
