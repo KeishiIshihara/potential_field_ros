@@ -2,13 +2,10 @@
 import rospy
 import sys
 import numpy as np
-#from coco_keypoints.msg import COCO
-#from coco_keypoints.msg import COCO_ARR
-#from tfpose_ros.msg import Persons
-#from tfpose_ros.msg import BodyPartElm
+import matplotlib.pyplot as plt
+
 from openpose_skeleton_3d.msg import COCO3d_ARR
 from nav_msgs.msg import OccupancyGrid
-# from potential_field_ros import BehaviorPotentialField 
 
 from waypoints import ComputeWaypoints
 from visualize_potentials import BehaviorPotentialField
@@ -23,6 +20,12 @@ class subPose3d:
 		self.start_position_x = 299 # int(random.uniform(0, self.width)) # 240
 		self.start_position_y = 200 # int(random.uniform(0, self.width)) # 240
 
+		""" About the pioneer """
+        self.m_pioneer = 10.0 #[kg]
+        self.V0 = np.array([0.0, 0.0]) #[m/s]
+        self.a = 300.
+
+
 		""" These are coefficients to calculate the potential """
 		self.dests = []
 		self.dest1_x = 10
@@ -30,13 +33,13 @@ class subPose3d:
 		self.dests.append([self.dest1_x,self.dest1_y])
 
 		self.kappa = 0.5
-		self.alpha = 150.0 #300.0 #20000 #700
+		self.alpha = 200.0 #300.0 #20000 #700
 		self.beta = 1.0
 		self.sigma = 1.0 #[m] #defalt is 1.5
 		self.gamma = 30. #It seems like 25. is better for now
 
-		self.kappa_att = 1.8 # gradient of the attractive force
-		self.delta = 0.3
+		self.kappa_att = 2.5 # gradient of the attractive force
+		# self.delta = 1.0
 
 		self.epsilon = 0.2 # amount of movement
 		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
@@ -96,12 +99,14 @@ class subPose3d:
 		# try:
 		rospy.loginfo("Getting pose...")
 		pose = rospy.wait_for_message("/openpose_skeleton_3d_node/pose3d",  COCO3d_ARR) #should it be set some timeout?
-
-		print pose
-		#for now only
-		self.define_humans()
+		# print pose
 
 		## Calculate human orientation here
+		self.define_humans_from_pose(pose)
+
+		self.humans = []
+		self.human_vels = []
+		self.define_humans()
 
 		self.waypoints = ComputeWaypoints(self)
 		self.pf = BehaviorPotentialField(self)
@@ -109,7 +114,6 @@ class subPose3d:
 		self.show_waypoints()
 	
 		# except:
-
 
 	def reset_goal_position(self, x, y):
 		# reset new goal
@@ -179,6 +183,40 @@ class subPose3d:
     
 	def show_only_potential(self):
 		self.pf.show_bpf()
+	
+	def define_humans_from_pose(self, pose):
+		self.humans = []
+		self.human_vels = []
+
+		for i in range(len(pose.data)):
+			# Human position
+			if pose.data.Neck.z != 0.0:
+				self.humans.append([pose.data[i].Neck.z, pose.data[i].Neck.x])
+
+			elif pose.data[i].RShoulder.z != 0.0 and pose.data[i].LShoulder.z != 0.0:
+				x = (pose.data[i].RShoulder.z - pose.data[i].LShoulder.z)/2. + pose.data[i].LShoulder.z
+				y = (pose.data[i].RShoulder.x - pose.data[i].LShoulder.x)/2. + pose.data[i].LShoulder.x
+				self.humans.append([x, y])
+				print "human "+str(i)+" = ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
+			
+			# Human Orientation
+			if pose.data[i].RShoulder.z != 0.0 and pose.data[i].LShoulder.z != 0.0:
+				x = pose.data[i].RShoulder.z - pose.data[i].LShoulder.z
+				y = pose.data[i].RShoulder.x - pose.data[i].LShoulder.x
+				LR = [x, y]
+				LR_normal = [-y, x]
+				self.human_vels.append(LR_normal)
+				print "human orientation"+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
+
+				plt.quiver(self.humans[i][1], self.humans[i][0], self.human_vels[i][0], self.human_vels[i][1], color='g', angles='xy',scale_units='xy',scale=1)
+            	plt.draw()
+
+			else:
+				LR_normal = [0. ,0.]
+				self.human_vels.append(LR_normal)
+				print "human orientation"+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
+        		plt.scatter(self.humans[i][1], self.humans[i][0], marker='o', color='b') 
+
 
 
 	def define_humans(self):

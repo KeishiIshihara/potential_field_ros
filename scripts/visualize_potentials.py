@@ -40,6 +40,8 @@ class BehaviorPotentialField:
         # self.rep_forces = []
         # self.att_force = None
 
+        # self.scale = 0.15 # for visualize vectors
+
         """ Assume a destination of robots """
         self.dests = pose.dests
 
@@ -56,7 +58,7 @@ class BehaviorPotentialField:
         self.gamma = pose.gamma #30. #It seems like 25. is better for now
 
         self.kappa_att = pose.kappa_att #1.5
-        self.delta = pose.delta #0.3
+        # self.delta = pose.delta #0.3
 
         self.mu = 0. # degree of the velocity of a human
         self.x_h = [] #the Unit is [m] not pixels
@@ -76,11 +78,9 @@ class BehaviorPotentialField:
 
     def show_bpf(self):
         potential_array = np.zeros((self.width,self.height),np.int) 
-        # att_array = np.zeros((self.width,self.height),np.int)
         
         x = np.linspace(0, self.size_x, self.width)
         y = np.linspace(0, self.size_y, self.height)
-        # X, Y = np.meshpose(x, y)
         X, Y = np.meshgrid(x, y)
 
         print "--------------- Map meta data -----------------"
@@ -93,13 +93,6 @@ class BehaviorPotentialField:
 
 
         for h in range(len(self.humans)):
-            """
-                self.humans[h][0] -> x of human No.h
-                self.humans[h][1] -> y of human No.h
-                self.humans_vels[h][0] -> Vx of human No.h
-                self.humans_vels[h][1] -> Vy of human No.h
-            """
-
             potential_array[self.humans[h][0]][self.humans[h][1]] = 0.
             potential_array[self.dests[0][0]][self.dests[0][1]] = 0.
             
@@ -117,7 +110,7 @@ class BehaviorPotentialField:
                 for j in range(potential_array.shape[1]):
                     if not (i == (self.humans[h][0] or self.dests[0][0]) and j == (self.humans[h][1] or self.dests[0][1])):
                         coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(i*self.resolution, j*self.resolution, i, j)
-                        coef_att = coef_att * self.gamma # = 0.
+                        coef_att = 0. #coef_att * self.gamma # = 0.
 
 
                         # if i == self.check_x and j == self.check_y:
@@ -239,8 +232,8 @@ class BehaviorPotentialField:
     def get_attractive_force(self, x_r, y_r, i, j): 
         d_hr, theta_hr = self.get_distance_to_the_destination(x_r, y_r, i, j)
         coef_att = self.kappa_att * d_hr
-        Fx = self.delta * coef_att * math.cos(theta_hr)
-        Fy = self.delta * coef_att * math.sin(theta_hr)
+        Fx = coef_att * math.cos(theta_hr)
+        Fy = coef_att * math.sin(theta_hr)
         return  coef_att, Fx, Fy, d_hr, theta_hr
 
     def get_repulsive_force(self, x_r, y_r, h):
@@ -248,8 +241,8 @@ class BehaviorPotentialField:
         d_hr, theta_hr = self.get_relative_position(x_r, y_r, h)
         mu = math.atan2(self.human_vels[h][1], self.human_vels[h][0])
         coef = self.coefficientRisk(d_hr, theta_hr, self.human_vels[h][0], self.human_vels[h][1], self.kappa, mu)
-        Fx = self.delta * self.vectorRiskX(d_hr, theta_hr, self.kappa, coef, mu)
-        Fy = self.delta * self.vectorRiskY(d_hr, theta_hr, self.kappa, coef, mu)
+        Fx = self.vectorRiskX(d_hr, theta_hr, self.kappa, coef, mu)
+        Fy = self.vectorRiskY(d_hr, theta_hr, self.kappa, coef, mu)
         F = math.sqrt(Fx**2 + Fy**2)
         return Fx, Fy, F, coef
 

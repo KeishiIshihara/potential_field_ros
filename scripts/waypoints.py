@@ -41,6 +41,11 @@ class ComputeWaypoints:
         """ Assume a destination of robots """
         self.dests = grid.dests
 
+        """ About the pioneer """
+        self.m_pioneer = grid.m_pioneer #10.0[kg]
+        self.Vt_1 = grid.V0 #[m/s]
+        self.a = grid.a #200.
+
         """ About a human """
         self.humans = grid.humans
         self.human_vels = grid.human_vels
@@ -140,28 +145,22 @@ class ComputeWaypoints:
             ### Calculate the total force that the robot receves
             ### TODO: move these to new function: -> completed!
             total_force = self.visualize_total_force(checks)
-            movement_x = int(Decimal((total_force[0]/self.resolution)).quantize(Decimal('0'), rounding=ROUND_HALF_UP))
-            movement_y = int(Decimal((total_force[1]/self.resolution)).quantize(Decimal('0'), rounding=ROUND_HALF_UP))
-            movement_x = int(self.epsilon * movement_x)
-            movement_y = int(self.epsilon * movement_y)
-            
 
-            movement = np.array([movement_x, movement_y])
-            movement = movement / np.linalg.norm(movement) * 5
-
-            movement_x = movement[0]
-            movement_y = movement[1]
-
-            amount_of_movement = math.sqrt(movement_x**2+movement_y**2)
-
-            print "movement vector = ("+str(movement_x)+", "+str(movement_y)+")"
-            print "amount of movement = "+str(amount_of_movement)
-
-            new_check_point_x = self.waypoints[checks][0] + movement_y
-            new_check_point_y = self.waypoints[checks][1] + movement_x
+            total_force = np.array(total_force)
+            magnitude_of_force = np.linalg.norm(total_force)
+            print "total force = ("+str(total_force[0])+", "+str(total_force[1])+")"
+            print "total force magnitude = "+str(magnitude_of_force)
+                
+            acc = total_force / self.m_pioneer
+            Vt = self.Vt_1 + 1.0 * self.a * acc
+            Vt = Vt / np.linalg.norm(Vt) * 10
+            new_check_point_x = self.waypoints[checks][0] + Vt[1]
+            new_check_point_y = self.waypoints[checks][1] + Vt[0]
             self.waypoints.append([new_check_point_x,new_check_point_y])
-            print "current waypoints = "+str(self.waypoints[checks])
-            plt.quiver(self.waypoints[checks][1]*self.resolution, self.waypoints[checks][0]*self.resolution, movement_x*self.resolution, movement_y*self.resolution, color='g', angles='xy',scale_units='xy',scale=1)
+            self.Vt_1 = Vt
+
+            # print "current waypoints = "+str(self.waypoints[checks])
+            plt.quiver(self.waypoints[checks][1]*self.resolution, self.waypoints[checks][0]*self.resolution, Vt[0]*self.resolution, Vt[1]*self.resolution, color='g', angles='xy',scale_units='xy',scale=1)
             plt.draw()
             checks += 1
 
@@ -169,7 +168,7 @@ class ComputeWaypoints:
             print "distance to the goal = "+str(distance_from_robot_to_goal)
 
             ### Errors >>
-            if amount_of_movement == 0.0:
+            if magnitude_of_force == 0.0:
                 robot_gets_stuck = True
             
             if checks > 500:
@@ -180,14 +179,14 @@ class ComputeWaypoints:
         if distance_from_robot_to_goal <= self.zeta and robot_gets_stuck == False:
             print "[finish] I achived to the goal finally!! "
 
-        elif robot_gets_stuck == True and amount_of_movement == 0.0:
-            print "[Error] The robot got stuck!! It is not able to move any more."
+        elif robot_gets_stuck == True and magnitude_of_force == 0.0:
+            print "[Warning] The robot got stuck!! It is not able to move any more."
             if distance_from_robot_to_goal < 0.5:
                 print "        But I might be almost around the goal."
 
         elif robot_gets_stuck == True and checks > 500:
-            print "[Error] I can't get the goal. It seems something strange..."
-            print "        Because the human's vectol is probably so large that I couldn't go to the goal."
+            print "[Warning] I can't get the goal. It seems something strange..."
+            print "           Because the human's vectol is probably so large that I couldn't go to the goal."
 
         print "# Started point = ("+str(self.start_position_x)+", "+str(self.start_position_y)+")"
         print "# Goal point = ("+str(self.dests[0][0])+", "+str(self.dests[0][1])+")"
@@ -195,18 +194,12 @@ class ComputeWaypoints:
         ## show the potential_array(plt)
         # plt.contour(X, Y, potential_array, 20, cmap='viridis')
         # plt.colorbar()
- 
+
+        plt.scatter(self.dests[0][1]*self.resolution, self.dests[0][0]*self.resolution, marker='o') 
         ax = plt.subplot()
         ax.plot()
         ax.set_xlabel("x")
         ax.set_ylabel("y")
-        
-
-        # make nd.array of waypoints to use numpy functions
-        np_waypoints = np.array(self.waypoints)
-
-        plt.scatter(self.dests[0][1]*self.resolution, self.dests[0][0]*self.resolution, marker='o')
-
         plt.axis('equal')
         # plt.show()
         plt.pause(1)
@@ -223,19 +216,8 @@ class ComputeWaypoints:
         rep_force = [sum_rep_x, sum_rep_y]
         magnitude_rep_force = math.sqrt(rep_force[0]**2+rep_force[1]**2)
 
-        # if magnitude_rep_force < 0.15: ## ignore total_force when it is too small
-        #     rep_force = [0,0]
-            
-        # elif magnitude_rep_force  > 0.8: ## in case of that total_force is too large
-        #     rep_force[0] = rep_force[0] / magnitude_rep_force
-        #     rep_force[1] = rep_force[1] / magnitude_rep_force
-        #     self.count += 1
-           
         ## sum self.att_force and repulsive forces
         total_force = [(self.att_force[0]+rep_force[0]), (self.att_force[1]+rep_force[1])]
-
-        # plt.quiver(self.waypoints[checks][1]*self.resolution, self.waypoints[checks][0]*self.resolution, total_force[0], total_force[1], color='g', angles='xy',scale_units='xy',scale=1)
-        # plt.draw()
 
         return total_force
 
@@ -275,10 +257,8 @@ class ComputeWaypoints:
     def get_attractive_force(self, x_r, y_r): 
         d_hr, theta_hr = self.get_distance_to_the_destination(x_r, y_r)
         coef_att = self.kappa_att * d_hr
-        # Fx = self.delta * coef_att * math.cos(theta_hr)
-        # Fy = self.delta * coef_att * math.sin(theta_hr)
-        Fx = self.delta * self.kappa_att * math.cos(theta_hr)
-        Fy = self.delta * self.kappa_att * math.sin(theta_hr)
+        Fx = self.kappa_att * math.cos(theta_hr)
+        Fy = self.kappa_att * math.sin(theta_hr)
         return  coef_att, Fx, Fy, d_hr, theta_hr
 
     def get_repulsive_force(self, x_r, y_r, h):
@@ -286,8 +266,8 @@ class ComputeWaypoints:
         d_hr, theta_hr = self.get_relative_position(x_r, y_r, h)
         mu = math.atan2(self.human_vels[h][1], self.human_vels[h][0])
         coef = self.coefficientRisk(d_hr, theta_hr, self.human_vels[h][0], self.human_vels[h][1], self.kappa, mu)
-        Fx = self.delta * self.vectorRiskX(d_hr, theta_hr, self.kappa, coef, mu)
-        Fy = self.delta * self.vectorRiskY(d_hr, theta_hr, self.kappa, coef, mu)
+        Fx = self.vectorRiskX(d_hr, theta_hr, self.kappa, coef, mu)
+        Fy = self.vectorRiskY(d_hr, theta_hr, self.kappa, coef, mu)
         F = math.sqrt(Fx**2 + Fy**2)
         return Fx, Fy, F, coef
 

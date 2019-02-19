@@ -32,6 +32,11 @@ class ChangeGoals:
         # self.dest1_y = int(random.uniform(0, self.width)) 
         self.dests.append([self.dest1_x,self.dest1_y])
 
+        """ About the pioneer """
+        self.m_pioneer = 10.0 #[kg]
+        self.V0 = np.array([0.0, 0.0]) #[m/s]
+        self.a = 300.
+
         """ About a human """
         self.humans = []
         self.human_vels = []
@@ -71,13 +76,13 @@ class ChangeGoals:
 
         """ These are coefficients to calculate the potential """
         self.kappa = 0.5 #3.0
-        self.alpha = 150.0 #300.0 #20000 #700
+        self.alpha = 200.0 #300.0 #20000 #700
         self.beta = 1.0
         self.sigma = 1.0 #[m] #defalt is 1.5
         self.gamma = 30. #It seems like 25. is better for now
 
-        self.kappa_att = 1.8 # gradient of the attractive force
-        self.delta = 0.3
+        self.kappa_att = 2.5 # gradient of the attractive force
+        # self.delta = 1.0
 
         self.epsilon = 0.2 # amount of movement
         self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
@@ -123,7 +128,7 @@ class ChangeGoals:
     def show_waypoints(self):
         self.waypoints.show_waypoints()
         self.pf.show_bpf()
-
+        
         reset_goal = True
 
         while reset_goal is True:
@@ -141,7 +146,6 @@ class ChangeGoals:
             
             # if 0 < (num_of_human) < len(self.humans)+1:
             if x < self.width and y < self.height:
-
                 print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
                 self.reset_goal_position(x, y)
                 self.waypoints.show_waypoints()
