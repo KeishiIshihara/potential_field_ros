@@ -33,13 +33,13 @@ class ComputeWaypoints:
         self.resolution = grid.resolution #[m/cells]
 
         """ About waypoints """
-        self.start_position_x = grid.start_position_x #299 # int(random.uniform(0, self.width)) # 240
-        self.start_position_y = grid.start_position_y #200 # int(random.uniform(0, self.width)) # 240
+        self.start_position_x = grid.start_position_x #0.0 
+        self.start_position_y = grid.start_position_y #0.0 
         self.waypoints = []
         self.waypoints.append([self.start_position_x, self.start_position_y])
 
         """ Assume a destination of robots """
-        self.dests = grid.dests
+        self.dests = grid.dests ##
 
         """ About the pioneer """
         self.m_pioneer = grid.m_pioneer #10.0[kg]
@@ -80,12 +80,6 @@ class ComputeWaypoints:
 
 
     def show_waypoints(self):
-        # potential_array = np.zeros((self.width,self.height),np.int) 
-        
-        # x = np.linspace(0, self.width*self.resolution, self.width)
-        # y = np.linspace(0, self.height*self.resolution, self.height)
-        # X, Y = np.meshgrid(x, y)
-
         print "--------------- Map meta data -----------------"
         print "Width = "+str(self.width)+"[cells]"
         print "Height = "+str(self.height)+"[cells]"
@@ -94,20 +88,20 @@ class ComputeWaypoints:
         print "Destination of the robots = ("+str(self.dests[0][0])+","+str(self.dests[0][1])+")"
         print "-----------------------------------------------"
 
-        self.set_robot_destination(self.dests[0][0]*self.resolution, self.dests[0][1]*self.resolution)
+        self.set_robot_destination(self.dests[0][0], self.dests[0][1])
         checks = 0
         self.count = 0
         
-        distance_from_robot_to_goal , theta = self.get_distance_to_the_destination(self.waypoints[checks][0]*self.resolution,self.waypoints[checks][1]*self.resolution)
+        distance_from_robot_to_goal , theta = self.get_distance_to_the_destination(self.waypoints[checks][0],self.waypoints[checks][1])
         robot_gets_stuck = False
  
         while(distance_from_robot_to_goal > self.zeta and robot_gets_stuck == False):
             print ""
             print "--------------- loop "+str(checks+1)+" --------------------"
             ## Attractive Force
-            coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(self.waypoints[checks][0]*self.resolution, self.waypoints[checks][1]*self.resolution)
+            coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(self.waypoints[checks][0], self.waypoints[checks][1])
 
-            # plt.quiver(self.waypoints[checks][1]*self.resolution, self.waypoints[checks][0]*self.resolution, Fx_a, Fy_a, color='r', angles='xy',scale_units='xy',scale=1)
+            # plt.quiver(self.waypoints[checks][1], self.waypoints[checks][0], Fx_a, Fy_a, color='r', angles='xy',scale_units='xy',scale=1)
             # plt.draw()
 
             self.att_force = [Fx_a, Fy_a]
@@ -117,18 +111,18 @@ class ComputeWaypoints:
                 # potential_array[self.humans[h][0]][self.humans[h][1]] = 0.
                 
                 ## get Polar coordinate when you just put (x, y)
-                d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0]*self.resolution, self.humans[h][1]*self.resolution)
+                d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0], self.humans[h][1])
 
                 ## set human position in both coordinate
-                self.set_human_position(d_h, theta_h, self.humans[h][0]*self.resolution, self.humans[h][1]*self.resolution)
+                self.set_human_position(d_h, theta_h, self.humans[h][0], self.humans[h][1])
 
                 ## Repulsive Force
-                Fx_r, Fy_r, F_r, coef_rep = self.get_repulsive_force(self.waypoints[checks][0]*self.resolution, self.waypoints[checks][1]*self.resolution, h)
+                Fx_r, Fy_r, F_r, coef_rep = self.get_repulsive_force(self.waypoints[checks][0], self.waypoints[checks][1], h)
 
-                # plt.quiver(self.waypoints[checks][1]*self.resolution, self.waypoints[checks][0]*self.resolution, Fy_r, Fx_r, color='b', angles='xy',scale_units='xy',scale=1)
+                # plt.quiver(self.waypoints[checks][1], self.waypoints[checks][0], Fy_r, Fx_r, color='b', angles='xy',scale_units='xy',scale=1)
                 # plt.draw()
                 self.rep_forces.append([Fy_r, Fx_r])
-                plt.quiver(self.humans[h][1]*self.resolution,self.humans[h][0]*self.resolution,self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
+                plt.quiver(self.humans[h][1],self.humans[h][0],self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
                 plt.draw()
 
                 # print ""
@@ -159,11 +153,11 @@ class ComputeWaypoints:
             self.Vt_1 = Vt
 
             # print "current waypoints = "+str(self.waypoints[checks])
-            plt.quiver(self.waypoints[checks][1]*self.resolution, self.waypoints[checks][0]*self.resolution, Vt[0]*self.resolution, Vt[1]*self.resolution, color='g', angles='xy',scale_units='xy',scale=1)
+            plt.quiver(self.waypoints[checks][1], self.waypoints[checks][0], Vt[0], Vt[1], color='g', angles='xy',scale_units='xy',scale=1)
             plt.draw()
             checks += 1
 
-            distance_from_robot_to_goal , theta = self.get_distance_to_the_destination(self.waypoints[checks][0]*self.resolution,self.waypoints[checks][1]*self.resolution)
+            distance_from_robot_to_goal , theta = self.get_distance_to_the_destination(self.waypoints[checks][0],self.waypoints[checks][1])
             print "distance to the goal = "+str(distance_from_robot_to_goal)
 
             ### Errors >>
@@ -194,7 +188,7 @@ class ComputeWaypoints:
         # plt.contour(X, Y, potential_array, 20, cmap='viridis')
         # plt.colorbar()
 
-        plt.scatter(self.dests[0][1]*self.resolution, self.dests[0][0]*self.resolution, marker='o') 
+        plt.scatter(self.dests[0][1], self.dests[0][0], marker='o') 
         ax = plt.subplot()
         ax.plot()
         ax.set_xlabel("x")
