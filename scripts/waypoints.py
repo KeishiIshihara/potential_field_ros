@@ -89,15 +89,20 @@ class ComputeWaypoints:
         print "-----------------------------------------------"
 
         self.set_robot_destination(self.dests[0][0], self.dests[0][1])
+        print self.dests
+        
         checks = 0
         self.count = 0
         
         distance_from_robot_to_goal , theta = self.get_distance_to_the_destination(self.waypoints[checks][0],self.waypoints[checks][1])
+
         robot_gets_stuck = False
  
         while(distance_from_robot_to_goal > self.zeta and robot_gets_stuck == False):
             print ""
             print "--------------- loop "+str(checks+1)+" --------------------"
+            print "aaaaaaaaaaaaaaaaaaaaaaa"
+            print distance_from_robot_to_goal, theta
             ## Attractive Force
             coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(self.waypoints[checks][0], self.waypoints[checks][1])
 
@@ -146,13 +151,13 @@ class ComputeWaypoints:
                 
             acc = total_force / self.m_pioneer
             Vt = self.Vt_1 + 1.0 * self.a * acc
-            Vt = Vt / np.linalg.norm(Vt) * 10
+            Vt = Vt / np.linalg.norm(Vt) * 0.2
             new_check_point_x = self.waypoints[checks][0] + Vt[1]
             new_check_point_y = self.waypoints[checks][1] + Vt[0]
             self.waypoints.append([new_check_point_x,new_check_point_y])
             self.Vt_1 = Vt
 
-            # print "current waypoints = "+str(self.waypoints[checks])
+            print "current waypoints = "+str(self.waypoints[checks])
             plt.quiver(self.waypoints[checks][1], self.waypoints[checks][0], Vt[0], Vt[1], color='g', angles='xy',scale_units='xy',scale=1)
             plt.draw()
             checks += 1
@@ -164,7 +169,7 @@ class ComputeWaypoints:
             if magnitude_of_force == 0.0:
                 robot_gets_stuck = True
             
-            if checks > 500:
+            if checks > 30:
                 robot_gets_stuck = True
             ### loops end here ###
         

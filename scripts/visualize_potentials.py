@@ -95,7 +95,7 @@ class BehaviorPotentialField:
 
 
         for h in range(len(self.humans)):
-            # potential_array[self.humans[h][0]][self.humans[h][1]+self.width/2] = 0.
+            potential_array[int(self.humans[h][0]/self.resolution)][int(self.humans[h][1]+self.width/2)] = 0.
             potential_array[self.dests[0][0]][self.dests[0][1]] = 0.
             
             ## get Polar coordinate when you just put (x, y)
