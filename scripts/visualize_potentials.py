@@ -80,7 +80,8 @@ class BehaviorPotentialField:
         
         x = np.linspace(0, self.size_x, self.width)
         y = np.linspace(0, self.size_y, self.height)
-        X, Y = np.meshpose(x, y)
+        # X, Y = np.meshpose(x, y)
+        X, Y = np.meshgrid(x, y)
 
         print "--------------- Map meta data -----------------"
         print "Width = "+str(self.width)+"[cells]"
@@ -193,7 +194,7 @@ class BehaviorPotentialField:
         plt.colorbar()
         plt.pause(5)
 
-        sys.exit(0)
+        # sys.exit(0)
 
 
         # potential_array = potential_array.max() 
