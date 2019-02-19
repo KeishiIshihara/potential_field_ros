@@ -17,19 +17,18 @@ class subPose3d:
 		self.width = 400 #[cells]
 		self.height = 400 #[cells]
 		self.resolution = 0.01 #[m/cells]
-		self.start_position_x = 299 # int(random.uniform(0, self.width)) # 240
-		self.start_position_y = 200 # int(random.uniform(0, self.width)) # 240
+		self.start_position_x = 0 # int(random.uniform(0, self.width)) # 240
+		self.start_position_y = 0 # int(random.uniform(0, self.width)) # 240
 
 		""" About the pioneer """
-        self.m_pioneer = 10.0 #[kg]
-        self.V0 = np.array([0.0, 0.0]) #[m/s]
-        self.a = 300.
-
+		self.m_pioneer = 10.0 #[kg]
+		self.V0 = np.array([0.0, 0.0]) #[m/s]
+		self.a = 300.
 
 		""" These are coefficients to calculate the potential """
 		self.dests = []
-		self.dest1_x = 10
-		self.dest1_y = 290
+		self.dest1_x = 350
+		self.dest1_y = 100
 		self.dests.append([self.dest1_x,self.dest1_y])
 
 		self.kappa = 0.5
@@ -44,7 +43,7 @@ class subPose3d:
 		self.epsilon = 0.2 # amount of movement
 		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
 
-		
+
 		rospy.init_node('subPose3d_node', anonymous=True)
 		self.pub = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
 
@@ -57,42 +56,6 @@ class subPose3d:
 		self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
 		self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
 
-
-	def callback(self, pose3d):
-
-		# rate = rospy.Rate(0.1) #Number of publishing in 1 seconds
-		#print pose3d
-		# self.grid = OccupancyGrid()
-		# self.grid.header.frame_id = "world"
-		# self.grid.header.stamp = rospy.Time.now()
-		# self.grid.info.resolution = self.resolution
-		# self.grid.info.width = self.width
-		# self.grid.info.height = self.height
-		# self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
-		# self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
-			
-		#### Compute humans position and direction here ####
-		self.define_humans()
-		#### now it is predefined.
-		#### it should be computed by the pose3d.
-
-
-		self.waypoints = ComputeWaypoints(self)
-		self.pf = BehaviorPotentialField(self)
-		# bp = BehaviorPotentialField(self.grid)
-
-		# self.grid.data = bp.show_bpf() ## Whichever you want
-
-		# while not rospy.is_shutdown():
-		self.show_waypoints()
-		rate.sleep()
-		sleep(10)
-
-		# for i in range(50):
-		# 	for j in range(50):
-		# 		self.grid.data.append(i+j)
-		# self.pub.publish(self.grid)
-		# print self.grid.data
 	
 
 	def get_pose_3d(self):
@@ -104,16 +67,44 @@ class subPose3d:
 		## Calculate human orientation here
 		self.define_humans_from_pose(pose)
 
-		self.humans = []
-		self.human_vels = []
-		self.define_humans()
+		# self.humans = []
+		# self.human_vels = []
+		# self.define_humans()
 
 		self.waypoints = ComputeWaypoints(self)
 		self.pf = BehaviorPotentialField(self)
 
 		self.show_waypoints()
 	
-		# except:
+	def show_waypoints(self):
+		self.waypoints.show_waypoints()
+		# self.pf.show_bpf()
+
+		reset_goal = True
+
+		while reset_goal is True:
+			print " --------- ------- -------- ------- ------- "
+			print " --------- ------- -------- ------- ------- "
+			print "Do you want to change the Goal ?"
+			print "Range is in ("+str(self.width)+", "+str(self.height)+")"
+
+			for i in range(len(self.humans)):
+				print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
+			
+			x, y = map(int, raw_input("input goal position as (x,y) >> ").split())
+			print x, y
+			
+			if x < self.width and y < self.height:
+				print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
+				self.reset_goal_position(x, y)
+				self.waypoints.show_waypoints()
+
+			else:
+				reset_goal = False
+				sleep(5)
+
+		print "Done."
+    
 
 	def reset_goal_position(self, x, y):
 		# reset new goal
@@ -149,73 +140,47 @@ class subPose3d:
 
 		# sys.exit(0)
 		
-	def show_waypoints(self):
-		self.waypoints.show_waypoints()
-		# self.pf.show_bpf()
-
-		reset_goal = True
-
-		while reset_goal is True:
-			print " --------- ------- -------- ------- ------- "
-			print " --------- ------- -------- ------- ------- "
-			print "Do you want to change the Goal ?"
-			print "Range is in ("+str(self.width)+", "+str(self.height)+")"
-
-			for i in range(len(self.humans)):
-				print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
-			
-			# x, y = (int(x) for x in input("input goal position as (x,y) >> ").split())
-			x, y = map(int, raw_input("input goal position as (x,y) >> ").split())
-			print x, y
-			
-			# if 0 < (num_of_human) < len(self.humans)+1:
-			if x < self.width and y < self.height:
-
-				print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
-				self.reset_goal_position(x, y)
-				self.waypoints.show_waypoints()
-
-			else:
-				reset_goal = False
-				sleep(5)
-
-		print "Done."
-    
-	def show_only_potential(self):
-		self.pf.show_bpf()
 	
 	def define_humans_from_pose(self, pose):
 		self.humans = []
 		self.human_vels = []
 
+		print "num of human :"+str(len(pose.data))
+
 		for i in range(len(pose.data)):
 			# Human position
-			if pose.data.Neck.z != 0.0:
-				self.humans.append([pose.data[i].Neck.z, pose.data[i].Neck.x])
+			if pose.data[i].Neck.z != 0.0:
+				self.humans.append([pose.data[i].Neck.z/self.resolution, pose.data[i].Neck.x/self.resolution])
 
 			elif pose.data[i].RShoulder.z != 0.0 and pose.data[i].LShoulder.z != 0.0:
 				x = (pose.data[i].RShoulder.z - pose.data[i].LShoulder.z)/2. + pose.data[i].LShoulder.z
-				y = (pose.data[i].RShoulder.x - pose.data[i].LShoulder.x)/2. + pose.data[i].LShoulder.x
-				self.humans.append([x, y])
-				print "human "+str(i)+" = ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
-			
+				y = (pose.data[i].RShoulder.x - pose.data[i].LShoulder.x)/2. + pose.data[i].LShoulder.x 
+				# y = (pose.data[i].RShoulder.x - pose.data[i].LShoulder.x)/2. + pose.data[i].LShoulder.x + self.width/2*self.resolution
+				self.humans.append([x/self.resolution, y/self.resolution])
+
+			print "human "+str(i)+" = ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
+
 			# Human Orientation
 			if pose.data[i].RShoulder.z != 0.0 and pose.data[i].LShoulder.z != 0.0:
 				x = pose.data[i].RShoulder.z - pose.data[i].LShoulder.z
 				y = pose.data[i].RShoulder.x - pose.data[i].LShoulder.x
-				LR = [x, y]
 				LR_normal = [-y, x]
+				LR_normal = np.array(LR_normal)
+				LR_normal = LR_normal / np.linalg.norm(LR_normal)
 				self.human_vels.append(LR_normal)
-				print "human orientation"+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
 
-				plt.quiver(self.humans[i][1], self.humans[i][0], self.human_vels[i][0], self.human_vels[i][1], color='g', angles='xy',scale_units='xy',scale=1)
-            	plt.draw()
+				print "human orientation "+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
 
+				# plt.quiver(self.humans[i][1], self.humans[i][0], self.human_vels[i][0], self.human_vels[i][1], color='g', angles='xy',scale_units='xy',scale=1)
+				# plt.draw()
+			
 			else:
 				LR_normal = [0. ,0.]
 				self.human_vels.append(LR_normal)
 				print "human orientation"+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
-        		plt.scatter(self.humans[i][1], self.humans[i][0], marker='o', color='b') 
+				# plt.scatter(self.humans[i][1], self.humans[i][0], marker='o', color='b') 
+			
+			self.num_humans = len(self.humans)
 
 
 

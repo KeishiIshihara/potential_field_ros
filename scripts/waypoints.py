@@ -57,7 +57,6 @@ class ComputeWaypoints:
         self.sigma = grid.sigma #1.0 #[m] #defalt is 1.5
         self.gamma = grid.gamma #30. #It seems like 25. is better for now
         self.kappa_att = grid.kappa_att #1.5
-        self.delta = grid.delta #0.3
 
         self.epsilon = grid.epsilon # amount of movement
         self.zeta = grid.zeta #0.2 #[m] # Threshold of the distance from robot to the goal
@@ -81,11 +80,11 @@ class ComputeWaypoints:
 
 
     def show_waypoints(self):
-        potential_array = np.zeros((self.width,self.height),np.int) 
+        # potential_array = np.zeros((self.width,self.height),np.int) 
         
-        x = np.linspace(0, self.width*self.resolution, self.width)
-        y = np.linspace(0, self.height*self.resolution, self.height)
-        X, Y = np.meshgrid(x, y)
+        # x = np.linspace(0, self.width*self.resolution, self.width)
+        # y = np.linspace(0, self.height*self.resolution, self.height)
+        # X, Y = np.meshgrid(x, y)
 
         print "--------------- Map meta data -----------------"
         print "Width = "+str(self.width)+"[cells]"
@@ -115,7 +114,7 @@ class ComputeWaypoints:
             self.rep_forces = [] #just initialize every humans
 
             for h in range(len(self.humans)):
-                potential_array[self.humans[h][0]][self.humans[h][1]] = 0.
+                # potential_array[self.humans[h][0]][self.humans[h][1]] = 0.
                 
                 ## get Polar coordinate when you just put (x, y)
                 d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0]*self.resolution, self.humans[h][1]*self.resolution)

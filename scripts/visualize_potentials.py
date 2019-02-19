@@ -79,8 +79,10 @@ class BehaviorPotentialField:
     def show_bpf(self):
         potential_array = np.zeros((self.width,self.height),np.int) 
         
-        x = np.linspace(0, self.size_x, self.width)
-        y = np.linspace(0, self.size_y, self.height)
+        # x = np.linspace(0, self.size_x, self.width)
+        x = np.linspace(-self.size_x/2, self.size_x/2, self.width)
+        # y = np.linspace(0, self.size_y, self.height)
+        y = np.linspace(-self.size_y/2, self.size_y/2, self.height)
         X, Y = np.meshgrid(x, y)
 
         print "--------------- Map meta data -----------------"
@@ -93,14 +95,14 @@ class BehaviorPotentialField:
 
 
         for h in range(len(self.humans)):
-            potential_array[self.humans[h][0]][self.humans[h][1]] = 0.
+            # potential_array[self.humans[h][0]][self.humans[h][1]+self.width/2] = 0.
             potential_array[self.dests[0][0]][self.dests[0][1]] = 0.
             
             ## get Polar coordinate when you just put (x, y)
-            d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0]*self.resolution, self.humans[h][1]*self.resolution)
+            d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0]/self.resolution, (self.humans[h][1]/self.resolution+self.width/2))
 
             ## set human position in both coordinate
-            self.set_human_position(d_h, theta_h, self.humans[h][0]*self.resolution, self.humans[h][1]*self.resolution)
+            self.set_human_position(d_h, theta_h, self.humans[h][0]/self.resolution, (self.humans[h][1]+self.width/2)/self.resolution)
             self.set_robot_destination(self.dests[0][0]*self.resolution, self.dests[0][1]*self.resolution)
 
 
@@ -108,7 +110,7 @@ class BehaviorPotentialField:
             for i in range(potential_array.shape[0]):
                 # print ""
                 for j in range(potential_array.shape[1]):
-                    if not (i == (self.humans[h][0] or self.dests[0][0]) and j == (self.humans[h][1] or self.dests[0][1])):
+                    if not (i == (self.humans[h][0]/self.resolution or self.dests[0][0]) and j == ((self.humans[h][1]/self.resolution+self.width/2) or self.dests[0][1])):
                         coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(i*self.resolution, j*self.resolution, i, j)
                         coef_att = 0. #coef_att * self.gamma # = 0.
 
@@ -152,7 +154,7 @@ class BehaviorPotentialField:
                             potential_array[i][j] = coef
             
 
-            plt.quiver(self.humans[h][1]*self.resolution,self.humans[h][0]*self.resolution,self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
+            plt.quiver(self.humans[h][1]+(self.width/2)/self.resolution,self.humans[h][0], self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
             plt.draw()
 
             # print ""
