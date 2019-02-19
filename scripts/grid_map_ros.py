@@ -41,13 +41,10 @@ class subPose3d:
 		self.epsilon = 0.2 # amount of movement
 		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
 
+		
+		rospy.init_node('subPose3d_node', anonymous=True)
 		self.pub = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
 
-
-	def callback(self, pose3d):
-
-		rate = rospy.Rate(0.1) #Number of publishing in 1 seconds
-		#print pose3d
 		self.grid = OccupancyGrid()
 		self.grid.header.frame_id = "world"
 		self.grid.header.stamp = rospy.Time.now()
@@ -56,6 +53,20 @@ class subPose3d:
 		self.grid.info.height = self.height
 		self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
 		self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
+
+
+	def callback(self, pose3d):
+
+		# rate = rospy.Rate(0.1) #Number of publishing in 1 seconds
+		#print pose3d
+		# self.grid = OccupancyGrid()
+		# self.grid.header.frame_id = "world"
+		# self.grid.header.stamp = rospy.Time.now()
+		# self.grid.info.resolution = self.resolution
+		# self.grid.info.width = self.width
+		# self.grid.info.height = self.height
+		# self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
+		# self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
 			
 		#### Compute humans position and direction here ####
 		self.define_humans()
@@ -80,6 +91,25 @@ class subPose3d:
 		# self.pub.publish(self.grid)
 		# print self.grid.data
 	
+
+	def get_pose_3d(self):
+		# try:
+		rospy.loginfo("Getting pose...")
+		pose = rospy.wait_for_message("/openpose_skeleton_3d_node/pose3d",  COCO3d_ARR) #should it be set some timeout?
+
+		print pose
+		#for now only
+		self.define_humans()
+
+		## Calculate human orientation here
+
+		self.waypoints = ComputeWaypoints(self)
+		self.pf = BehaviorPotentialField(self)
+
+		self.show_waypoints()
+	
+		# except:
+
 
 	def reset_goal_position(self, x, y):
 		# reset new goal
@@ -117,7 +147,7 @@ class subPose3d:
 		
 	def show_waypoints(self):
 		self.waypoints.show_waypoints()
-		self.pf.show_bpf()
+		# self.pf.show_bpf()
 
 		reset_goal = True
 
@@ -190,12 +220,12 @@ class subPose3d:
 
 
 def main(args):
-	hu = subPose3d()
-	rospy.init_node('subPose3d_node', anonymous=True)
+	pose = subPose3d()
+	# rospy.init_node('subPose3d_node', anonymous=True)
 	try:
-		# rospy.Subscriber('/openpose_skeleton_3d_node/pose3d', COCO3d_ARR, hu.callback)
-		rospy.
-		rospy.spin()
+		# rospy.Subscriber('/openpose_skeleton_3d_node/pose3d', COCO3d_ARR, pose.callback)
+		pose.get_pose_3d()
+		rospy.spin() #?
 	except KeyboardInterrupt:
 		print "Shutting down ROS module"
 		del hu
