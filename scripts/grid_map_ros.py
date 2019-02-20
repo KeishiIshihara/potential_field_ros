@@ -7,6 +7,8 @@ import math
 
 from openpose_skeleton_3d.msg import COCO3d_ARR
 from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PointStamped
 
 from waypoints import ComputeWaypoints
 from visualize_potentials import BehaviorPotentialField
@@ -48,6 +50,8 @@ class subPose3d:
 		rospy.init_node('subPose3d_node', anonymous=True)
 		self.pub = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
 
+		self.pub = rospy.Publisher('/initalpose', PoseWithCovarianceStamped, queue_size=10)
+
 		self.grid = OccupancyGrid()
 		self.grid.header.frame_id = "world"
 		self.grid.header.stamp = rospy.Time.now()
@@ -82,6 +86,7 @@ class subPose3d:
 		# self.pf.show_bpf()
 
 		reset_goal = True
+		goal_is_human = False
 
 		while reset_goal is True:
 			print " --------- ------- -------- ------- ------- "
@@ -92,12 +97,17 @@ class subPose3d:
 			for i in range(len(self.humans)):
 				print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
 			
-			x, y = map(int, raw_input("input goal position as (x,y) >> ").split())
+			x, y = map(float, raw_input("input goal position as (x,y) >> ").split())
 			print x, y
 			
 			if x < self.width and y < self.height:
 				print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
-				self.reset_goal_position(x, y)
+				for i in range (len(self.humans)):
+					distance_to_the_human = math.sqrt((x-self.humans[i][0])**2+(y-self.humans[i][1])**2)
+					if distance_to_the_human < 0.2:
+						print "Now I'm gonna go to human no."+str(i)+": ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
+						goal_is_human = True
+				self.reset_goal_position(x, y, goal_is_human)
 				self.waypoints.show_waypoints()
 
 			else:
@@ -107,7 +117,7 @@ class subPose3d:
 		print "Done."
     
 
-	def reset_goal_position(self, x, y):
+	def reset_goal_position(self, x, y, goal_is_human):
 		# reset new goal
 		self.dests = []
 		self.dests.append([x, y])
@@ -117,15 +127,15 @@ class subPose3d:
 		self.waypoints.waypoints.append(last_point)
 		self.pf.dests = self.dests
 
-		# check if goal is human or not
-		np_humans = np.array(self.humans)
-		xy = np.array([x,y])
-		goal_is_human = False
-		for i in range(len(np_humans)):
-			if (np_humans[i] == xy).all() == True:
-				print np_humans[i]
-				goal_is_human = True
-				human_position = i
+		## check if goal is human or not
+		# np_humans = np.array(self.humans)
+		# xy = np.array([x,y])
+		# goal_is_human = False
+		# for i in range(len(np_humans)):
+		# 	if (np_humans[i] == xy).all() == True:
+		# 		print np_humans[i]
+		# 		goal_is_human = True
+		# 		human_position = i
 
 		# update humans if goal is human
 		if goal_is_human == True:
@@ -151,13 +161,13 @@ class subPose3d:
 		for i in range(len(pose.data)):
 			# Human position
 			if pose.data[i].Neck.z != 0.0:
-				self.humans.append([pose.data[i].Neck.z, pose.data[i].Neck.x])
+				self.humans.append([round(pose.data[i].Neck.z,2), round(pose.data[i].Neck.x,2)])
 
 			elif pose.data[i].RShoulder.z != 0.0 and pose.data[i].LShoulder.z != 0.0:
 				x = (pose.data[i].RShoulder.z - pose.data[i].LShoulder.z)/2. + pose.data[i].LShoulder.z
 				y = (pose.data[i].RShoulder.x - pose.data[i].LShoulder.x)/2. + pose.data[i].LShoulder.x 
 				# y = (pose.data[i].RShoulder.x - pose.data[i].LShoulder.x)/2. + pose.data[i].LShoulder.x + self.width/2*self.resolution
-				self.humans.append([x, y])
+				self.humans.append([round(x,2), round(y,2)])
 
 			print "human "+str(i)+" = ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
 
