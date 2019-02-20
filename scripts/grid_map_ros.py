@@ -82,42 +82,48 @@ class subPose3d:
 		self.show_waypoints()
 	
 	def show_waypoints(self):
-		self.waypoints.show_waypoints()
+		# self.waypoints.show_waypoints()
 		# self.pf.show_bpf()
 
 		reset_goal = True
 		goal_is_human = False
+		human_position = None
 
 		while reset_goal is True:
 			print " --------- ------- -------- ------- ------- "
 			print " --------- ------- -------- ------- ------- "
-			print "Do you want to change the Goal ?"
-			print "Range is in ("+str(self.width)+", "+str(self.height)+")"
+			# print "Do you want to change the Goal ?"
+			print "Where do you want to go ?"
+			# print "Range is in ("+str(self.width)+", "+str(self.height)+")"
 
 			for i in range(len(self.humans)):
 				print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
 			
-			x, y = map(float, raw_input("input goal position as (x,y) >> ").split())
+			x, y = map(float, raw_input("input goal position as (x,y)[m] ex. 3.5 1.0 >> ").split())
 			print x, y
 			
-			if x < self.width and y < self.height:
+			# if x < self.width and y < self.height:
+			for i in range (len(self.humans)):
+				distance_to_the_human = math.sqrt((x-self.humans[i][0])**2+(y-self.humans[i][1])**2)
+				if distance_to_the_human < 0.2:
+					print "Now I'm gonna go to human no."+str(i)+": ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
+					goal_is_human = True
+					human_position = i
+			
+			if not goal_is_human:
 				print "Now I'm gonna go to ("+str(x)+", "+str(y)+")"
-				for i in range (len(self.humans)):
-					distance_to_the_human = math.sqrt((x-self.humans[i][0])**2+(y-self.humans[i][1])**2)
-					if distance_to_the_human < 0.2:
-						print "Now I'm gonna go to human no."+str(i)+": ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
-						goal_is_human = True
-				self.reset_goal_position(x, y, goal_is_human)
-				self.waypoints.show_waypoints()
 
-			else:
-				reset_goal = False
-				sleep(5)
+			self.reset_goal_position(x, y, goal_is_human, human_position)
+			self.waypoints.show_waypoints()
+
+			# else:
+			# 	reset_goal = False
+			# 	sleep(5)
 
 		print "Done."
     
 
-	def reset_goal_position(self, x, y, goal_is_human):
+	def reset_goal_position(self, x, y, goal_is_human, human_position):
 		# reset new goal
 		self.dests = []
 		self.dests.append([x, y])
