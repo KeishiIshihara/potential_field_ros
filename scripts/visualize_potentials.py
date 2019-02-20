@@ -81,8 +81,8 @@ class BehaviorPotentialField:
         
         # x = np.linspace(0, self.size_x, self.width)
         x = np.linspace(-self.size_x/2, self.size_x/2, self.width)
-        # y = np.linspace(0, self.size_y, self.height)
-        y = np.linspace(-self.size_y/2, self.size_y/2, self.height)
+        y = np.linspace(0, self.size_y, self.height)
+        # y = np.linspace(-self.size_y/2, self.size_y/2, self.height)
         X, Y = np.meshgrid(x, y)
 
         print "--------------- Map meta data -----------------"
@@ -95,66 +95,69 @@ class BehaviorPotentialField:
 
 
         for h in range(len(self.humans)):
-            potential_array[int(self.humans[h][0]/self.resolution)][int(self.humans[h][1]+self.width/2)] = 0.
-            potential_array[self.dests[0][0]][self.dests[0][1]] = 0.
+            # potential_array[int(self.humans[h][0]/self.resolution)][int(self.humans[h][1]/self.resolution+self.width/2)] = 0.
+            plt.scatter(self.humans[h][0], self.humans[h][1], marker='o', color="b") 
+            # potential_array[int(self.dests[0][0]/self.resolution)][int(self.dests[0][1]/self.resolution)] = 0.
+            plt.scatter(self.dests[0]][0], self.dests[0][1], marker='o', color="r") 
+
             
             ## get Polar coordinate when you just put (x, y)
-            d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0]/self.resolution, (self.humans[h][1]/self.resolution+self.width/2))
+            d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0], self.humans[h][1)
 
             ## set human position in both coordinate
-            self.set_human_position(d_h, theta_h, self.humans[h][0]/self.resolution, (self.humans[h][1]+self.width/2)/self.resolution)
-            self.set_robot_destination(self.dests[0][0]*self.resolution, self.dests[0][1]*self.resolution)
+            self.set_human_position(d_h, theta_h, self.humans[h][0], self.humans[h][1])
+            self.set_robot_destination(self.dests[0][0], self.dests[0][1])
 
 
             ### Visualization for the both potential fields
             for i in range(potential_array.shape[0]):
                 # print ""
                 for j in range(potential_array.shape[1]):
-                    if not (i == (self.humans[h][0]/self.resolution or self.dests[0][0]) and j == ((self.humans[h][1]/self.resolution+self.width/2) or self.dests[0][1])):
-                        coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(i*self.resolution, j*self.resolution, i, j)
-                        coef_att = 0. #coef_att * self.gamma # = 0.
+                    # if not (i == (self.humans[h][0]/self.resolution or self.dests[0][0]) and j == ((self.humans[h][1]/self.resolution+self.width/2) or self.dests[0][1])):
+                    coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(i*self.resolution, j*self.resolution, i, j)
+                    coef_att = 0. #coef_att * self.gamma # = 0.
 
 
-                        # if i == self.check_x and j == self.check_y:
-                        #     plt.quiver(j*self.resolution, i*self.resolution, Fx_a, Fy_a, color='r', angles='xy',scale_units='xy',scale=1)
-                        #     plt.draw()
-                        #     F_a = math.sqrt(Fx_a**2+Fy_a**2)
-                        #     self.att_force = [Fx_a, Fy_a]
-                        #     print "------------ checking attractive forces -------------"
-                        #     print "check point = ("+str(self.check_x)+", "+str(self.check_y)+")"
-                        #     print "(Fx_a, Fy_a) = ("+str(Fx_a)+", "+str(Fy_a)+")"
-                        #     print "F_a = "+str(F_a)
-                        #     print "(d_hr, theta_hr) = ("+str(d)+", "+str(math.degrees(theta))+")"
-                        #     print "------------------------------------------------------"
-                        #     # if end //
+                    # if i == self.check_x and j == self.check_y:
+                    #     plt.quiver(j*self.resolution, i*self.resolution, Fx_a, Fy_a, color='r', angles='xy',scale_units='xy',scale=1)
+                    #     plt.draw()
+                    #     F_a = math.sqrt(Fx_a**2+Fy_a**2)
+                    #     self.att_force = [Fx_a, Fy_a]
+                    #     print "------------ checking attractive forces -------------"
+                    #     print "check point = ("+str(self.check_x)+", "+str(self.check_y)+")"
+                    #     print "(Fx_a, Fy_a) = ("+str(Fx_a)+", "+str(Fy_a)+")"
+                    #     print "F_a = "+str(F_a)
+                    #     print "(d_hr, theta_hr) = ("+str(d)+", "+str(math.degrees(theta))+")"
+                    #     print "------------------------------------------------------"
+                    #     # if end //
 
-                        
-                        Fx_r, Fy_r, F_r, coef_rep = self.get_repulsive_force(i*self.resolution, j*self.resolution, h)
-                        coef_rep = coef_rep*self.gamma
+                    
+                    Fx_r, Fy_r, F_r, coef_rep = self.get_repulsive_force(i*self.resolution, j*self.resolution, h)
+                    coef_rep = coef_rep*self.gamma
 
-                        # if i == self.check_x and j == self.check_y:
-                        #     plt.quiver(j*self.resolution, i*self.resolution, Fy_r, Fx_r, color='b', angles='xy',scale_units='xy',scale=1)
-                        #     plt.draw()
-                        #     F_r = math.sqrt(Fx_r**2+Fy_r**2)
-                        #     self.rep_forces.append([Fy_r, Fx_r])
-                        #     print "------------- checking repulsive forces --------------"
-                        #     print "check point = ("+str(self.check_x)+", "+str(self.check_y)+")"
-                        #     print "(Fx_r, Fy_r) = ("+str(Fx_r)+", "+str(Fy_r)+")"
-                        #     print "F_r = "+str(F_r)
-                        #     print "-----------------------------------------------------"
-                        #     # if end //
-   
-                        # sys.stdout.write(str(coef) + " ")
+                    # if i == self.check_x and j == self.check_y:
+                    #     plt.quiver(j*self.resolution, i*self.resolution, Fy_r, Fx_r, color='b', angles='xy',scale_units='xy',scale=1)
+                    #     plt.draw()
+                    #     F_r = math.sqrt(Fx_r**2+Fy_r**2)
+                    #     self.rep_forces.append([Fy_r, Fx_r])
+                    #     print "------------- checking repulsive forces --------------"
+                    #     print "check point = ("+str(self.check_x)+", "+str(self.check_y)+")"
+                    #     print "(Fx_r, Fy_r) = ("+str(Fx_r)+", "+str(Fy_r)+")"
+                    #     print "F_r = "+str(F_r)
+                    #     print "-----------------------------------------------------"
+                    #     # if end //
 
-                        ### Adopt the larger value (att or rep) at the point
-                        coef = coef_att if coef_att > coef_rep else coef_rep
+                    # sys.stdout.write(str(coef) + " ")
 
-                        ### Adopt the larger value (potential_array or coef) at the point
-                        if potential_array[i][j] < coef:
-                            potential_array[i][j] = coef
+                    ### Adopt the larger value (att or rep) at the point
+                    coef = coef_att if coef_att > coef_rep else coef_rep
+
+                    ### Adopt the larger value (potential_array or coef) at the point
+                    if potential_array[i][j] < coef:
+                        potential_array[i][j] = coef
             
 
-            plt.quiver(self.humans[h][1]+(self.width/2)/self.resolution,self.humans[h][0], self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
+            plt.quiver(self.humans[h][1] - self.width/2*self.resolution,self.humans[h][0], self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
             plt.draw()
 
             # print ""
@@ -219,6 +222,10 @@ class BehaviorPotentialField:
     def get_relative_position(self, x_r, y_r, h):
         x_r = float(x_r)
         y_r = float(y_r)
+
+        if x_r == self.x_h[h] and y_r == self.y_h[h]:
+            return 0., 0.
+
         r = math.sqrt(((x_r - self.x_h[h])**2 + (y_r - self.y_h[h])**2))
         theta = math.atan2((y_r - self.y_h[h]) , (x_r - self.x_h[h]))
         return r, theta 
@@ -241,6 +248,9 @@ class BehaviorPotentialField:
     def get_repulsive_force(self, x_r, y_r, h):
 
         d_hr, theta_hr = self.get_relative_position(x_r, y_r, h)
+        if d_hr == 0. and theta_hr == 0.:
+            return 0., 0., 0., 0.
+
         mu = math.atan2(self.human_vels[h][1], self.human_vels[h][0])
         coef = self.coefficientRisk(d_hr, theta_hr, self.human_vels[h][0], self.human_vels[h][1], self.kappa, mu)
         Fx = self.vectorRiskX(d_hr, theta_hr, self.kappa, coef, mu)
