@@ -58,7 +58,7 @@ class ComputeWaypoints:
         self.gamma = grid.gamma #30. #It seems like 25. is better for now
         self.kappa_att = grid.kappa_att #1.5
 
-        self.epsilon = grid.epsilon # amount of movement
+        self.epsilon = grid.epsilon # curvature
         self.zeta = grid.zeta #0.2 #[m] # Threshold of the distance from robot to the goal
 
         self.mu = 0. # degree of the velocity of a human
@@ -80,7 +80,7 @@ class ComputeWaypoints:
 
 
     def show_waypoints(self):
-        print "--------------- Map meta data -----------------"
+        # print "--------------- Map meta data -----------------"
         print "Width = "+str(self.width)+"[cells]"
         print "Height = "+str(self.height)+"[cells]"
         print "Resolution: "+str(self.resolution)+"[m/cells]"
@@ -101,8 +101,6 @@ class ComputeWaypoints:
         while(distance_from_robot_to_goal > self.zeta and robot_gets_stuck == False):
             print ""
             print "--------------- loop "+str(checks+1)+" --------------------"
-            print "aaaaaaaaaaaaaaaaaaaaaaa"
-            print distance_from_robot_to_goal, theta
             ## Attractive Force
             coef_att, Fx_a, Fy_a, d, theta= self.get_attractive_force(self.waypoints[checks][0], self.waypoints[checks][1])
 
@@ -150,20 +148,20 @@ class ComputeWaypoints:
             print "total force magnitude = "+str(magnitude_of_force)
                 
             acc = total_force / self.m_pioneer
-            Vt = self.Vt_1 + 1.0 * self.a * acc
+            Vt = self.epsilon * self.Vt_1 + 1.0 * self.a * acc
             Vt = Vt / np.linalg.norm(Vt) * 0.2
             new_check_point_x = self.waypoints[checks][0] + Vt[1]
             new_check_point_y = self.waypoints[checks][1] + Vt[0]
             self.waypoints.append([new_check_point_x,new_check_point_y])
             self.Vt_1 = Vt
 
-            print "current waypoints = "+str(self.waypoints[checks])
+            # print "current waypoints = "+str(self.waypoints[checks])
             plt.quiver(self.waypoints[checks][1], self.waypoints[checks][0], Vt[0], Vt[1], color='g', angles='xy',scale_units='xy',scale=1)
             plt.draw()
             checks += 1
 
             distance_from_robot_to_goal , theta = self.get_distance_to_the_destination(self.waypoints[checks][0],self.waypoints[checks][1])
-            print "distance to the goal = "+str(distance_from_robot_to_goal)
+            # print "distance to the goal = "+str(distance_from_robot_to_goal)
 
             ### Errors >>
             if magnitude_of_force == 0.0:

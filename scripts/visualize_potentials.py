@@ -96,17 +96,17 @@ class BehaviorPotentialField:
 
         for h in range(len(self.humans)):
             # potential_array[int(self.humans[h][0]/self.resolution)][int(self.humans[h][1]/self.resolution+self.width/2)] = 0.
-            plt.scatter(self.humans[h][0], self.humans[h][1], marker='o', color="b") 
+            plt.scatter(self.humans[h][1], self.humans[h][0], marker='o', color="b") 
             # potential_array[int(self.dests[0][0]/self.resolution)][int(self.dests[0][1]/self.resolution)] = 0.
-            plt.scatter(self.dests[0]][0], self.dests[0][1], marker='o', color="r") 
+            plt.scatter(self.dests[0][1], self.dests[0][0], marker='o', color="r") 
 
             
             ## get Polar coordinate when you just put (x, y)
-            d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0], self.humans[h][1)
+            d_h, theta_h = self.get_polar_coordinate_from_origin(self.humans[h][0] , self.humans[h][1] + self.height/2*self.resolution)
 
             ## set human position in both coordinate
-            self.set_human_position(d_h, theta_h, self.humans[h][0], self.humans[h][1])
-            self.set_robot_destination(self.dests[0][0], self.dests[0][1])
+            self.set_human_position(d_h, theta_h, self.humans[h][0], self.humans[h][1] + self.height/2*self.resolution)
+            self.set_robot_destination(self.dests[0][0], self.dests[0][1] + self.height/2*self.resolution)
 
 
             ### Visualization for the both potential fields
@@ -157,8 +157,8 @@ class BehaviorPotentialField:
                         potential_array[i][j] = coef
             
 
-            plt.quiver(self.humans[h][1] - self.width/2*self.resolution,self.humans[h][0], self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
-            plt.draw()
+            # plt.quiver(self.humans[h][1] - self.width/2*self.resolution,self.humans[h][0], self.human_vels[h][1],self.human_vels[h][0], angles='xy',scale_units='xy',scale=1)
+            # plt.draw()
 
             # print ""
             # print "-------------  Num of humans: "+str(h+1)+" / "+str(len(self.humans))+" ------------"

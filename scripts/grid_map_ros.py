@@ -3,6 +3,7 @@ import rospy
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 from openpose_skeleton_3d.msg import COCO3d_ARR
 from nav_msgs.msg import OccupancyGrid
@@ -23,7 +24,7 @@ class subPose3d:
 		""" About the pioneer """
 		self.m_pioneer = 10.0 #[kg]
 		self.V0 = np.array([0.0, 0.0]) #[m/s]
-		self.a = 300.
+		self.a = 100.
 
 		""" These are coefficients to calculate the potential """
 		self.dests = []
@@ -40,7 +41,7 @@ class subPose3d:
 		self.kappa_att = 2.5 # gradient of the attractive force
 		# self.delta = 1.0
 
-		self.epsilon = 0.2 # amount of movement
+		self.epsilon = 70 # curvature
 		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
 
 
@@ -144,9 +145,9 @@ class subPose3d:
 	def define_humans_from_pose(self, pose):
 		self.humans = []
 		self.human_vels = []
-
-		print "num of human :"+str(len(pose.data))
-
+		print "--------------- Map meta data -----------------"
+		print "num of human : "+str(len(pose.data))
+		
 		for i in range(len(pose.data)):
 			# Human position
 			if pose.data[i].Neck.z != 0.0:
@@ -164,12 +165,32 @@ class subPose3d:
 			if pose.data[i].RShoulder.z != 0.0 and pose.data[i].LShoulder.z != 0.0:
 				x = pose.data[i].RShoulder.z - pose.data[i].LShoulder.z
 				y = pose.data[i].RShoulder.x - pose.data[i].LShoulder.x
-				LR_normal = [-y, x]
-				LR_normal = np.array(LR_normal)
-				LR_normal = LR_normal / np.linalg.norm(LR_normal)
-				self.human_vels.append(LR_normal)
 
+				normal_1 = [-y, x]
+				normal_2 = [y, -x]
+				if pose.data[i].RShoulder.z < pose.data[i].LShoulder.z:
+					if normal_1[0] > 0:
+						LR_normal = np.array(normal_1)
+				   		LR_normal = LR_normal / np.linalg.norm(LR_normal)
+						self.human_vels.append(LR_normal)
+					else:
+						LR_normal = np.array(normal_2)
+				   		LR_normal = LR_normal / np.linalg.norm(LR_normal)
+						self.human_vels.append(LR_normal)
+				else:
+					if normal_1[0] < 0:
+						LR_normal = np.array(normal_1)
+				   		LR_normal = LR_normal / np.linalg.norm(LR_normal)
+						self.human_vels.append(LR_normal)
+					else:
+						LR_normal = np.array(normal_2)
+				   		LR_normal = LR_normal / np.linalg.norm(LR_normal)
+						self.human_vels.append(LR_normal)
+				
+				print "RShoulder "+str(i)+" = ("+str(pose.data[i].RShoulder.z)+", "+str(pose.data[i].RShoulder.x)+")"
+				print "LShoulder "+str(i)+" = ("+str(pose.data[i].LShoulder.z)+", "+str(pose.data[i].LShoulder.x)+")"
 				print "human orientation "+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
+
 
 				# plt.quiver(self.humans[i][1], self.humans[i][0], self.human_vels[i][0], self.human_vels[i][1], color='g', angles='xy',scale_units='xy',scale=1)
 				# plt.draw()
@@ -180,6 +201,7 @@ class subPose3d:
 				print "human orientation"+str(i)+" = ("+str(self.human_vels[i][0])+", "+str(self.human_vels[i][1])+")"
 				# plt.scatter(self.humans[i][1], self.humans[i][0], marker='o', color='b') 
 			
+			print ""
 			self.num_humans = len(self.humans)
 
 
