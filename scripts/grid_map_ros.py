@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+# from pyquaternion import Quaternion
 
 from openpose_skeleton_3d.msg import COCO3d_ARR
 from nav_msgs.msg import OccupancyGrid
@@ -13,6 +14,8 @@ from geometry_msgs.msg import PointStamped
 from waypoints import ComputeWaypoints
 from visualize_potentials import BehaviorPotentialField
 from time import sleep
+
+import tf
 
 
 class subPose3d:
@@ -43,15 +46,16 @@ class subPose3d:
 		self.kappa_att = 2.5 # gradient of the attractive force
 		# self.delta = 1.0
 
-		self.epsilon = 70 # curvature
+		self.epsilon = 180 # curvature
 		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
 
-
 		rospy.init_node('subPose3d_node', anonymous=True)
-		self.pub = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
+		self.pub_map = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
 
-		self.pub = rospy.Publisher('/initalpose', PoseWithCovarianceStamped, queue_size=10)
+		self.pub_waypoint = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=10)
 
+
+		## Grid_map configuration
 		self.grid = OccupancyGrid()
 		self.grid.header.frame_id = "world"
 		self.grid.header.stamp = rospy.Time.now()
@@ -61,7 +65,11 @@ class subPose3d:
 		self.grid.info.origin.position.x = -1 * self.width*self.resolution/2
 		self.grid.info.origin.position.y = -1 * self.height*self.resolution/2
 
-	
+		## PoseWithCovarianceStamped configuration
+		self.goals = PoseWithCovarianceStamped()
+		self.goals.header.frame_id = "kinect_optical_link" #"base_link"??
+		self.goals.header.stamp = rospy.Time.now()
+
 
 	def get_pose_3d(self):
 		# try:
@@ -90,11 +98,7 @@ class subPose3d:
 		human_position = None
 
 		while reset_goal is True:
-			print " --------- ------- -------- ------- ------- "
-			print " --------- ------- -------- ------- ------- "
-			# print "Do you want to change the Goal ?"
 			print "Where do you want to go ?"
-			# print "Range is in ("+str(self.width)+", "+str(self.height)+")"
 
 			for i in range(len(self.humans)):
 				print "  - human "+str(i)+" : ("+str(self.humans[i][0])+", "+str(self.humans[i][1])+")"
@@ -115,13 +119,72 @@ class subPose3d:
 
 			self.reset_goal_position(x, y, goal_is_human, human_position)
 			self.waypoints.show_waypoints()
+			self.Let_the_robot_move()
 
 			# else:
 			# 	reset_goal = False
 			# 	sleep(5)
 
+			print " --------- ------- -------- ------- ------- "
+			rospy.loginfo("Now getting pose...")
+			pose = rospy.wait_for_message("/openpose_skeleton_3d_node/pose3d",  COCO3d_ARR)
+			self.define_humans_from_pose(pose)
+			print " --------- ------- -------- ------- ------- "
+
 		print "Done."
+
+	
+	def Let_the_robot_move(self):
+		rate = rospy.Rate(10)
+		# while not rospy.is_shutdown():
+		for i in range(1, len(self.waypoints.waypoints)):
+			transformed_waypoint = self.transform_waypoint(i)
+			prev_transformed_waypoint = self.transform_waypoint(i-1)
+			
+			self.goals.pose.pose.position.x = transformed_waypoint.point.x
+			self.goals.pose.pose.position.y = transformed_waypoint.point.y
+			self.goals.pose.pose.position.z = transformed_waypoint.point.z
+			
+			Vx = transformed_waypoint.point.x - prev_transformed_waypoint.point.x
+			Vy = transformed_waypoint.point.y - prev_transformed_waypoint.point.y
+			Vz = 0.
+			# R = np.array([[Vx, -Vy, 0], [Vy, Vx, 0], [0.,0.,1]])
+			R = np.array([[Vx, Vy, 0], [-Vy, Vx, 0], [0.,0.,1]])
+			M = np.eye(4, dtype=np.float64)
+			M[:3, :3] = R
+			print M
+			print "a"
+			q = tf.transformations.quaternion_from_matrix(M)
+			print "a"
+
+			# q = Quaternion(matrix=R)
+			self.goals.pose.pose.orientation.x = q[0]
+			self.goals.pose.pose.orientation.y = q[1]
+			self.goals.pose.pose.orientation.z = q[2]
+			self.goals.pose.pose.orientation.w = q[3]
+
+			self.pub_waypoint.publish(self.goals)
+			rate.sleep()
     
+	# def kinect_to_odom(self):
+	# 	listener = tf.TransformListener()
+	# 	try:
+	# 		listener.transformPoint("/odom", "/kinect_optical_frame", waypoint, transformed_waypoint)
+
+	def transform_waypoint(self, i):
+		waypoint = PointStamped()
+		waypoint.header.frame_id = "kinect_optical_link"
+		waypoint.header.stamp = rospy.Time(0)
+		waypoint.point.x = self.waypoints.waypoints[i][1]
+		waypoint.point.y = 0.0
+		waypoint.point.z = self.waypoints.waypoints[i][0]
+
+		listener = tf.TransformListener()
+		listener.waitForTransform("/kinect_optical_link", "/odom", rospy.Time(0), rospy.Duration(4.0))
+		transformed_waypoint = listener.transformPoint("odom", waypoint)
+
+		return transformed_waypoint
+
 
 	def reset_goal_position(self, x, y, goal_is_human, human_position):
 		# reset new goal
