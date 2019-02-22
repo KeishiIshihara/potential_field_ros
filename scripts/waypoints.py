@@ -149,7 +149,7 @@ class ComputeWaypoints:
                 
             acc = total_force / self.m_pioneer
             Vt = self.epsilon * self.Vt_1 + 1.0 * self.a * acc
-            Vt = Vt / np.linalg.norm(Vt) * 0.5
+            Vt = Vt / np.linalg.norm(Vt) * 0.3
             new_check_point_x = self.waypoints[checks][0] + Vt[1]
             new_check_point_y = self.waypoints[checks][1] + Vt[0]
             self.waypoints.append([new_check_point_x,new_check_point_y])

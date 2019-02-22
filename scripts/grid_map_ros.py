@@ -47,7 +47,7 @@ class subPose3d:
 		# self.delta = 1.0
 
 		self.epsilon = 180 # curvature
-		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
+		self.zeta = 0.3 #[m] # Threshold of the distance from robot to the goal
 
 		rospy.init_node('subPose3d_node', anonymous=True)
 		self.pub_map = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
@@ -135,27 +135,37 @@ class subPose3d:
 
 	
 	def Let_the_robot_move(self):
-		rate = rospy.Rate(10)
+		self.long_waypoints = []
+		for i in range(len(self.waypoints.waypoints)):
+			if i %3 == 0:
+				self.long_waypoints.append(self.waypoints.waypoints[i])
+		
+
+		rate = rospy.Rate(5)
 		# while not rospy.is_shutdown():
-		for i in range(1, len(self.waypoints.waypoints)):
+		for i in range(len(self.long_waypoints)-1):
 			transformed_waypoint = self.transform_waypoint(i)
-			prev_transformed_waypoint = self.transform_waypoint(i-1)
+			next_transformed_waypoint = self.transform_waypoint(i+1)
 			
 			self.goals.pose.pose.position.x = transformed_waypoint.point.x
 			self.goals.pose.pose.position.y = transformed_waypoint.point.y
 			self.goals.pose.pose.position.z = transformed_waypoint.point.z
 			
-			Vx = transformed_waypoint.point.x - prev_transformed_waypoint.point.x
-			Vy = transformed_waypoint.point.y - prev_transformed_waypoint.point.y
+			Vx = next_transformed_waypoint.point.x - transformed_waypoint.point.x
+			Vy = next_transformed_waypoint.point.y - transformed_waypoint.point.y
 			Vz = 0.
+			V = np.array([Vx, Vy, Vz])
+			V = V / np.linalg.norm(V)
+
 			# R = np.array([[Vx, -Vy, 0], [Vy, Vx, 0], [0.,0.,1]])
-			R = np.array([[Vx, Vy, 0], [-Vy, Vx, 0], [0.,0.,1]])
+			R = np.array([[V[0], -V[1], V[2]], [V[1], V[0], 0], [V[2],0.,1]])
+			# R = np.array([[Vx, Vy, 0], [-Vy, Vx, 0], [0.,0.,1]])
 			M = np.eye(4, dtype=np.float64)
 			M[:3, :3] = R
 			print M
 			print "a"
 			q = tf.transformations.quaternion_from_matrix(M)
-			print "a"
+			print "b"
 
 			# q = Quaternion(matrix=R)
 			self.goals.pose.pose.orientation.x = q[0]
@@ -175,9 +185,11 @@ class subPose3d:
 		waypoint = PointStamped()
 		waypoint.header.frame_id = "kinect_optical_link"
 		waypoint.header.stamp = rospy.Time(0)
-		waypoint.point.x = self.waypoints.waypoints[i][1]
+		# waypoint.point.x = self.waypoints.waypoints[i][1]
+		waypoint.point.x = self.long_waypoints[i][1]
 		waypoint.point.y = 0.0
-		waypoint.point.z = self.waypoints.waypoints[i][0]
+		# waypoint.point.z = self.waypoints.waypoints[i][0]
+		waypoint.point.z = self.long_waypoints[i][0]
 
 		listener = tf.TransformListener()
 		listener.waitForTransform("/kinect_optical_link", "/odom", rospy.Time(0), rospy.Duration(4.0))
