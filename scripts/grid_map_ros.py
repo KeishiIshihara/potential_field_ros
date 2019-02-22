@@ -27,7 +27,7 @@ class subPose3d:
 		self.start_position_y = 0 #[m]
 
 		""" About the pioneer """
-		self.m_pioneer = 10.0 #[kg]
+		self.m_pioneer = 30.0 #[kg]
 		self.V0 = np.array([0.0, 0.0]) #[m/s]
 		self.a = 100.
 
@@ -47,7 +47,7 @@ class subPose3d:
 		# self.delta = 1.0
 
 		self.epsilon = 180 # curvature
-		self.zeta = 0.3 #[m] # Threshold of the distance from robot to the goal
+		self.zeta = 0.1 #[m] # Threshold of the distance from robot to the goal
 
 		rospy.init_node('subPose3d_node', anonymous=True)
 		self.pub_map = rospy.Publisher('/potential_field_ros/grid_map', OccupancyGrid, queue_size=10)
@@ -137,11 +137,12 @@ class subPose3d:
 	def Let_the_robot_move(self):
 		self.long_waypoints = []
 		for i in range(len(self.waypoints.waypoints)):
-			if i %3 == 0:
+			if i %3 == 2:
 				self.long_waypoints.append(self.waypoints.waypoints[i])
-		
 
-		rate = rospy.Rate(5)
+		print len(self.long_waypoints)
+
+		rate = rospy.Rate(0.5)
 		# while not rospy.is_shutdown():
 		for i in range(len(self.long_waypoints)-1):
 			transformed_waypoint = self.transform_waypoint(i)
@@ -162,7 +163,7 @@ class subPose3d:
 			# R = np.array([[Vx, Vy, 0], [-Vy, Vx, 0], [0.,0.,1]])
 			M = np.eye(4, dtype=np.float64)
 			M[:3, :3] = R
-			print M
+			# print M
 			print "a"
 			q = tf.transformations.quaternion_from_matrix(M)
 			print "b"
@@ -174,6 +175,8 @@ class subPose3d:
 			self.goals.pose.pose.orientation.w = q[3]
 
 			self.pub_waypoint.publish(self.goals)
+			print self.goals
+
 			rate.sleep()
     
 	# def kinect_to_odom(self):
@@ -192,7 +195,8 @@ class subPose3d:
 		waypoint.point.z = self.long_waypoints[i][0]
 
 		listener = tf.TransformListener()
-		listener.waitForTransform("/kinect_optical_link", "/odom", rospy.Time(0), rospy.Duration(4.0))
+		# listener.waitForTransform("/kinect_optical_link", "/odom", rospy.Time(0), rospy.Duration(4.0))
+		listener.waitForTransform("/odom", "/kinect_optical_link", rospy.Time(0), rospy.Duration(4.0))
 		transformed_waypoint = listener.transformPoint("odom", waypoint)
 
 		return transformed_waypoint
